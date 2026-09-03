@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111318">
+<title>薪水小偷｜摸魚計時器</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0e1014;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:700px;margin:auto;padding:18px 14px 40px}h1{font-size:30px;margin:8px 0 4px}.sub{color:#9aa1ad;font-size:14px;margin-bottom:16px}
+.card{background:#191d24;border:1px solid #303641;border-radius:18px;padding:17px;margin:12px 0}
+.top{display:flex;justify-content:space-between;align-items:center}.lv{font-size:28px;font-weight:900}.rank{color:#f2c94c;font-weight:800;margin-top:4px}.xp{color:#a7adb8;font-size:13px;margin-top:5px}
+.bar{height:10px;background:#303641;border-radius:99px;overflow:hidden;margin-top:12px}.fill{height:100%;background:#f2c94c;width:0%;transition:.25s}
+.timer{text-align:center;font-size:54px;font-weight:800;margin:8px 0}.status{text-align:center;color:#a7adb8;margin-bottom:12px}
+.buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}button{border:1px solid #3a414d;background:#252b34;color:#fff;border-radius:14px;padding:15px 10px;font-size:17px;font-weight:700}button:active{transform:scale(.98)}
+button.active{background:#7a5420;border-color:#f2c94c}.stop{background:#8f3030}.primary{width:100%;background:#245d9c;border-color:#3985d8;margin-bottom:12px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:#12151a;border-radius:14px;padding:13px;text-align:center}.num{font-size:25px;font-weight:800}.label{font-size:12px;color:#9aa1ad;margin-top:3px}
+.log{max-height:220px;overflow:auto}.row{display:flex;justify-content:space-between;border-bottom:1px solid #2a3039;padding:10px 0;font-size:14px}.note{color:#9aa1ad;font-size:12px;line-height:1.6}
+.reset{background:#20242b;font-size:14px;padding:11px}
+</style>
+</head>
+<body><div class="app">
+<h1>💼 薪水小偷</h1><div class="sub">今天不摸魚，怎麼對得起薪水？</div>
+<div class="card"><div class="top"><div><div class="lv" id="level">Lv.1</div><div class="rank" id="rank">菜鳥一級</div><div class="xp" id="xpText">0 / 60 XP</div></div><div style="font-size:42px">🦹</div></div><div class="bar"><div class="fill" id="xpFill"></div></div></div>
+<div class="card"><div class="timer" id="timer">00:00:00</div><div class="status" id="status">目前沒有摸魚</div><button class="primary" id="toggleBtn" onclick="toggle()">開始摸魚</button>
+<div class="buttons"><button onclick="start('廁所',this)">🚽 廁所</button><button onclick="start('放空',this)">🫥 放空</button><button onclick="start('裝忙',this)">💻 裝忙</button><button onclick="start('打屁',this)">💬 打屁</button><button onclick="start('其他',this)">🕶️ 其他</button><button class="stop" onclick="stop()">結束摸魚</button></div></div>
+<div class="card"><div class="stats"><div class="stat"><div class="num" id="today">0分</div><div class="label">今日摸魚</div></div><div class="stat"><div class="num" id="total">0分</div><div class="label">累計摸魚</div></div></div></div>
+<div class="card"><h3 style="margin-top:0">今日紀錄</h3><div class="log" id="log"></div><div class="note" style="margin-top:10px">每 1 分鐘摸魚 = 1 XP。每天 17:30 結算；若當時沒有開啟頁面，下次開啟時會自動處理。</div><button class="reset" style="margin-top:12px" onclick="clearData()">清除本機資料</button></div>
+</div>
+<script>
+const K='salaryThief_v2';let d=JSON.parse(localStorage.getItem(K)||'null')||{xp:0,total:0,days:{},current:null,lastSettlement:null};
+const titles=['菜鳥','菜鳥','菜鳥','菜鳥','菜鳥','菜鳥','菜鳥','菜鳥','菜鳥','菜鳥','薪水小偷','薪水小偷','薪水小偷','薪水小偷','薪水小偷','薪水小偷','薪水小偷','薪水小偷','薪水小偷','薪水小偷','摸魚大王','摸魚大王','摸魚大王','摸魚大王','摸魚大王','摸魚大王','摸魚大王','摸魚大王','摸魚大王','摸魚大王','摸魚宗師','摸魚宗師','摸魚宗師','摸魚宗師','摸魚宗師','摸魚宗師','摸魚宗師','摸魚宗師','摸魚宗師','摸魚宗師'];
+const nums=['一級','二級','三級','四級','五級','六級','七級','八級','九級','十級'];
+function key(){return new Date().toLocaleDateString('sv-SE')}function td(){let k=key();return d.days[k]||(d.days[k]={seconds:0,logs:[]})}
+function fmt(s){let m=Math.floor(s/60),h=Math.floor(m/60);return h?`${h}時${m%60}分`:`${m}分`}
+function render(){
+ let lv=Math.min(40,Math.floor(d.xp/60)+1),cur=lv==40?d.xp-2340:d.xp-(lv-1)*60,t=td();
+ level.textContent='Lv.'+lv;rank.textContent=titles[lv-1]+nums[(lv-1)%10];xpText.textContent=lv==40?'MAX LEVEL':`${cur} / 60 XP`;xpFill.style.width=(lv==40?100:cur/60*100)+'%';
+ today.textContent=fmt(t.seconds);total.textContent=fmt(d.total);status.textContent=d.current?'正在摸魚：'+d.current.type:'目前沒有摸魚';toggleBtn.textContent=d.current?'停止 '+d.current.type:'開始摸魚';
+ log.innerHTML=t.logs.length?t.logs.slice().reverse().map(x=>`<div class="row"><span>${x.type}</span><span>${x.minutes} 分鐘</span></div>`).join(''):'<div class="note">今天還沒有紀錄。</div>';
+ if(d.current){let s=Math.floor((Date.now()-d.current.start)/1000);timer.textContent=new Date(s*1000).toISOString().substr(11,8)}else timer.textContent='00:00:00';
+}
+function save(){localStorage.setItem(K,JSON.stringify(d))}
+function start(type,btn){if(d.current)stop();d.current={type,start:Date.now()};document.querySelectorAll('.buttons button').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');save();render()}
+function toggle(){d.current?stop():start('其他')}
+function stop(){if(!d.current)return;let sec=Math.max(1,Math.floor((Date.now()-d.current.start)/1000)),m=Math.max(1,Math.round(sec/60)),t=td();t.seconds+=sec;d.total+=sec;d.xp=Math.min(2399,d.xp+m);t.logs.push({type:d.current.type,minutes:m});d.current=null;document.querySelectorAll('.buttons button').forEach(x=>x.classList.remove('active'));save();render()}
+function settle(){let n=new Date(),k=key(),c=new Date(n);c.setHours(17,30,0,0);if(n>=c&&d.lastSettlement!==k){if(d.current)stop();d.lastSettlement=k;save()}}
+function clearData(){if(confirm('確定清除所有本機遊戲資料？')){localStorage.removeItem(K);location.reload()}}
+settle();render();setInterval(()=>{settle();render()},1000);
+</script></body></html>
